@@ -9,17 +9,50 @@ from werkzeug.utils import secure_filename
 from html import escape
 import bleach
 
+
 app = Flask(__name__)
+
+# Environment configuration
+is_production = os.environ.get("APP_ENV") == "production"
 
 app.config["SECRET_KEY"] = os.environ.get(
     "SECRET_KEY", "draftly-development-secret"
 )
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///draftly.db"
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-app.config["SESSION_COOKIE_HTTPONLY"] = True
-app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 
-CORS(app, supports_credentials=True, origins=["http://localhost:5173"])
+database_url = os.environ.get(
+    "DATABASE_URL", "sqlite:///draftly.db"
+)
+
+# Support PostgreSQL connection strings from hosting providers
+if database_url.startswith("postgres://"):
+    database_url = database_url.replace(
+        "postgres://", "postgresql+psycopg://", 1
+    )
+elif database_url.startswith("postgresql://"):
+    database_url = database_url.replace(
+        "postgresql://", "postgresql+psycopg://", 1
+    )
+
+app.config["SQLALCHEMY_DATABASE_URI"] = database_url
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+# Session cookie configuration
+app.config["SESSION_COOKIE_HTTPONLY"] = True
+app.config["SESSION_COOKIE_SAMESITE"] = (
+    "None" if is_production else "Lax"
+)
+app.config["SESSION_COOKIE_SECURE"] = is_production
+
+# Frontend connection
+frontend_url = os.environ.get(
+    "FRONTEND_URL", "http://localhost:5173"
+)
+
+CORS(
+    app,
+    supports_credentials=True,
+    origins=[frontend_url]
+)
 
 db.init_app(app)
 
