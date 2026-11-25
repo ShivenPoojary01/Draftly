@@ -1,6 +1,7 @@
+
 import { useEffect, useState } from "react";
 import "./App.css";
-import ImportFile from './components/ImportFile';
+import ImportFile from "./components/ImportFile";
 import Login from "./pages/Login";
 import DocumentEditor from "./pages/DocumentEditor";
 import api from "./services/api";
@@ -14,7 +15,9 @@ function App() {
   const [documents, setDocuments] = useState([]);
   const [documentsLoading, setDocumentsLoading] = useState(false);
   const [documentError, setDocumentError] = useState("");
+  const [activeMenuId, setActiveMenuId] = useState(null);
 
+  // Restore user session
   useEffect(() => {
     let cancelled = false;
 
@@ -28,11 +31,13 @@ function App() {
     }
 
     restoreSession();
+
     return () => {
       cancelled = true;
     };
   }, []);
 
+  // Fetch documents
   useEffect(() => {
     if (!user) return;
 
@@ -53,14 +58,14 @@ function App() {
                 ? new Date(doc.updated_at).toLocaleString()
                 : "Recently",
               icon: "📄",
-            })),
+            }))
           );
         }
       } catch (error) {
         if (!cancelled) {
           setDocumentError(
             error.response?.data?.error ||
-              "Unable to load documents. Please try again.",
+              "Unable to load documents. Please try again."
           );
         }
       } finally {
@@ -75,6 +80,7 @@ function App() {
     };
   }, [user, refreshKey]);
 
+  // Create document
   async function createDocument() {
     setDocumentError("");
 
@@ -87,11 +93,12 @@ function App() {
       setSelectedDocumentId(response.data.id);
     } catch (error) {
       setDocumentError(
-        error.response?.data?.error || "Could not create document.",
+        error.response?.data?.error || "Could not create document."
       );
     }
   }
 
+  // Logout
   async function logout() {
     try {
       await api.post("/auth/logout");
@@ -102,8 +109,10 @@ function App() {
     setUser(null);
     setSelectedDocumentId(null);
     setDocuments([]);
+    setActiveMenuId(null);
   }
 
+  // Filter documents
   const filteredDocuments = documents.filter((doc) => {
     const matchesSearch = doc.title
       .toLowerCase()
@@ -129,6 +138,7 @@ function App() {
         currentUserId={user.id}
         onBack={() => {
           setSelectedDocumentId(null);
+          setActiveMenuId(null);
           setRefreshKey((current) => current + 1);
         }}
       />
@@ -153,7 +163,7 @@ function App() {
         </div>
 
         <button className="sidebar-create" onClick={createDocument}>
-          <span>＋</span> New document <kbd>⌘ N</kbd>
+          <span>＋</span> New document
         </button>
 
         <div className="sidebar-section">
@@ -166,8 +176,13 @@ function App() {
           ].map(([label, icon]) => (
             <button
               key={label}
-              className={`nav-item ${activeTab === label ? "selected" : ""}`}
-              onClick={() => setActiveTab(label)}
+              className={`nav-item ${
+                activeTab === label ? "selected" : ""
+              }`}
+              onClick={() => {
+                setActiveTab(label);
+                setActiveMenuId(null);
+              }}
             >
               <span>{icon}</span>
               {label}
@@ -177,12 +192,15 @@ function App() {
 
         <div className="sidebar-section">
           <span className="sidebar-label">YOUR SPACE</span>
+
           <button className="nav-item">
             <span>☆</span> Starred
           </button>
+
           <button className="nav-item">
             <span>⌛</span> Recent
           </button>
+
           <button className="nav-item">
             <span>⌫</span> Trash
           </button>
@@ -194,9 +212,11 @@ function App() {
               <span>Storage</span>
               <span>12% used</span>
             </div>
+
             <div className="storage-track">
               <div className="storage-fill" />
             </div>
+
             <small>120 MB of 1 GB used</small>
           </div>
 
@@ -204,10 +224,12 @@ function App() {
             <div className="user-avatar">
               {user.name?.charAt(0).toUpperCase()}
             </div>
+
             <div className="user-details">
               <strong>{user.name}</strong>
               <small>{user.email}</small>
             </div>
+
             <button className="logout-button" onClick={logout}>
               Logout
             </button>
@@ -215,12 +237,18 @@ function App() {
         </div>
       </aside>
 
-      <main className="main-area">
+      <main
+        className="main-area"
+        onClick={() => {
+          if (activeMenuId !== null) setActiveMenuId(null);
+        }}
+      >
         <header className="topbar">
           <div className="breadcrumb">
             Workspace <span>/</span>
             <strong>{activeTab}</strong>
           </div>
+
           <div className="topbar-actions">
             <div className="top-avatar">
               {user.name?.charAt(0).toUpperCase()}
@@ -235,35 +263,50 @@ function App() {
               <h1>Make room for ideas.</h1>
               <p>Everything you're working on, all in one place.</p>
             </div>
+
             <button className="primary-button" onClick={createDocument}>
               <span>＋</span> Create document
             </button>
           </section>
 
           <section className="quick-create">
-            <button className="quick-card blank-card" onClick={createDocument}>
+            <button
+              className="quick-card blank-card"
+              onClick={createDocument}
+            >
               <div className="quick-icon purple">＋</div>
+
               <div>
                 <strong>Blank document</strong>
                 <small>Start with a fresh page</small>
               </div>
+
               <span className="quick-arrow">↗</span>
             </button>
 
-            <div className="quick-card">
-              <div className="quick-icon blue">↗</div>
-              <div>
-                <strong>Shared workspace</strong>
-                <small>Work together on documents</small>
-              </div>
-            </div>
-
-           <ImportFile
-  onImported={(documentId) => {
-    setRefreshKey((current) => current + 1);
-    setSelectedDocumentId(documentId);
+            <button
+  type="button"
+  className="quick-card shared-card"
+  onClick={() => {
+    setActiveTab("Shared with me");
+    setSearch("");
+    setActiveMenuId(null);
   }}
-/>
+>
+  <div className="quick-icon blue">↗</div>
+
+  <div>
+    <strong>Shared workspace</strong>
+    <small>Work together on documents</small>
+  </div>
+</button>
+
+            <ImportFile
+              onImported={(documentId) => {
+                setRefreshKey((current) => current + 1);
+                setSelectedDocumentId(documentId);
+              }}
+            />
           </section>
 
           <section className="documents-area">
@@ -276,12 +319,12 @@ function App() {
               <div className="document-tools">
                 <div className="search-box">
                   <span>⌕</span>
+
                   <input
                     value={search}
                     onChange={(event) => setSearch(event.target.value)}
                     placeholder="Search documents..."
                   />
-                  <kbd>⌘ K</kbd>
                 </div>
               </div>
             </div>
@@ -313,7 +356,10 @@ function App() {
                     onClick={() => setSelectedDocumentId(doc.id)}
                   >
                     <div className="document-name">
-                      <div className="file-icon">{doc.icon || "📄"}</div>
+                      <div className="file-icon">
+                        {doc.icon || "📄"}
+                      </div>
+
                       <strong>{doc.title}</strong>
                     </div>
 
@@ -321,10 +367,13 @@ function App() {
                       <div className="mini-avatar">
                         {doc.owner?.charAt(0).toUpperCase()}
                       </div>
+
                       {doc.owner}
                     </div>
 
-                    <span className="modified-cell">{doc.updated}</span>
+                    <span className="modified-cell">
+                      {doc.updated}
+                    </span>
 
                     <span>
                       <span
@@ -336,7 +385,51 @@ function App() {
                       </span>
                     </span>
 
-                    <span className="more-button">•••</span>
+                    <div
+                      className="document-menu-container"
+                      onClick={(event) => event.stopPropagation()}
+                    >
+                      <button
+                        type="button"
+                        className="more-button"
+                        aria-label={`Options for ${doc.title}`}
+                        aria-expanded={activeMenuId === doc.id}
+                        onClick={() =>
+                          setActiveMenuId(
+                            activeMenuId === doc.id ? null : doc.id
+                          )
+                        }
+                      >
+                        ⋯
+                      </button>
+
+                      {activeMenuId === doc.id && (
+                        <div
+                          className="document-dropdown"
+                          onClick={(event) => event.stopPropagation()}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setActiveMenuId(null);
+                              setSelectedDocumentId(doc.id);
+                            }}
+                          >
+                            Open document
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setActiveMenuId(null);
+                              setSelectedDocumentId(doc.id);
+                            }}
+                          >
+                            Manage sharing
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 ))}
 
@@ -345,7 +438,11 @@ function App() {
                   <div>📄</div>
                   <strong>No documents found</strong>
                   <p>Try another search or create a new document.</p>
-                  <button className="primary-button" onClick={createDocument}>
+
+                  <button
+                    className="primary-button"
+                    onClick={createDocument}
+                  >
                     Create document
                   </button>
                 </div>

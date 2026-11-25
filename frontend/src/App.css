@@ -513,7 +513,7 @@ button.quick-card {
   background: white;
   border: 1px solid #e9eaf0;
   border-radius: 10px;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .table-header,
@@ -1253,4 +1253,90 @@ button.quick-card {
   color: #c03939;
   font-size: 11px;
   margin-top: 5px;
+}
+.document-menu-container {
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+
+.more-button {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 22px;
+  color: #64748b;
+  padding: 5px 10px;
+  border-radius: 6px;
+}
+
+.more-button:hover {
+  background: #eeeafe;
+  color: #765ce8;
+}
+
+.document-dropdown {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  min-width: 165px;
+  padding: 6px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 9px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  z-index: 100;
+}
+
+.document-dropdown button {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  color: #263044;
+  font-size: 13px;
+}
+
+.document-dropdown button:hover {
+  background: #f3f0ff;
+}
+.document-table {
+  overflow: visible !important;
+}
+
+.document-row {
+  position: relative;
+}
+
+.document-menu-container {
+  position: relative;
+  z-index: 5;
+}
+
+.document-row:has(.document-dropdown) {
+  z-index: 20;
+}
+
+.document-dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 9999;
+}
+.shared-card {
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  border: 1px solid #e5e7eb;
+}
+
+.shared-card:hover {
+  border-color: #8b78ed;
+  background: #faf9ff;
 }
